@@ -7,7 +7,7 @@
   digits: new RegExp(/^[\d() \.\:\-\+#]+$/),
   isodate: new RegExp(/^\d{4}[\/\-](0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])$/)
 }
-/*eslint-enable*/
+/* eslint-enable */
 
 export default {
   name: 'InputTag',
@@ -89,6 +89,7 @@ export default {
       if (
         this.newTag &&
         this.innerTags.indexOf(this.newTag) === -1 &&
+        this.innerTags.indexOf(`#${this.newTag}`) === -1 &&
         this.validateIfNeeded(this.newTag)
       ) {
         this.innerTags.push(this.newTag)
@@ -121,6 +122,33 @@ export default {
 
     tagChange () {
       this.$emit('update:tags', this.innerTags)
+    },
+
+    handlePaste (ev) {
+      ev.preventDefault()
+
+      if (ev.clipboardData) {
+        let data = ev.clipboardData.getData('Text')
+
+        if (data) {
+          // Split by space and trim # and , chars
+          data = data.split(' ').map(tag => tag.replace(/^[#,]+|[#,]+$/g, ''))
+
+          // Validate and add tags
+          data.forEach(tag => {
+            if (
+              this.innerTags.indexOf(tag) === -1 &&
+              this.innerTags.indexOf(`#${tag}`) === -1 &&
+              this.validateIfNeeded(tag)
+            ) {
+              this.innerTags.push(tag)
+              this.tagChange()
+            }
+          })
+        }
+      }
+
+      return false
     }
   }
 }
@@ -142,6 +170,7 @@ export default {
       v-on:keydown             = "addNew"
       v-on:blur                = "addNew"
       class                    = "new-tag"
+      v-on:paste               = "handlePaste"
     />
   </div>
 </template>
